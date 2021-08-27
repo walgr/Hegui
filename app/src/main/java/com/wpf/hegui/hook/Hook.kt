@@ -49,7 +49,8 @@ class Hook : XposedInit() {
     }
 
     private fun hook(lpparam: LoadPackageParam) {
-        postMsg("正在hook应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}")
+        val appName = AppHelper.getApplicationNameByPackageName(context, hookPackageName)
+        postMsg("正在hook应用:${appName}")
 
         //固定格式
         //8.0以下获取imei
@@ -59,7 +60,7 @@ class Hook : XposedInit() {
                 "getDeviceId",  // 需要hook的方法名
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getDeviceId()获取了imei"
+                        val msg = "应用:${appName}调用getDeviceId()获取了imei"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -72,7 +73,7 @@ class Hook : XposedInit() {
                 Int::class.javaPrimitiveType,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getDeviceId(int)获取了imei"
+                        val msg = "应用:${appName}调用getDeviceId(int)获取了imei"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -85,7 +86,7 @@ class Hook : XposedInit() {
                 "getImei",
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getImei获取了imei"
+                        val msg = "应用:${appName}调用getImei获取了imei"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -99,7 +100,7 @@ class Hook : XposedInit() {
                 Int::class.javaPrimitiveType,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getImei(int)获取了imei"
+                        val msg = "应用:${appName}调用getImei(int)获取了imei"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -113,7 +114,7 @@ class Hook : XposedInit() {
                 Int::class.javaPrimitiveType,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getSubscriberId获取了imsi"
+                        val msg = "应用:${appName}调用getSubscriberId获取了imsi"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -125,7 +126,7 @@ class Hook : XposedInit() {
                 "getMacAddress",
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getMacAddress()获取了mac地址"
+                        val msg = "应用:${appName}调用getMacAddress()获取了mac地址"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -137,7 +138,7 @@ class Hook : XposedInit() {
                 "getHardwareAddress",
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getHardwareAddress()获取了mac地址"
+                        val msg = "应用:${appName}调用getHardwareAddress()获取了mac地址"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -155,7 +156,7 @@ class Hook : XposedInit() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         val name = param.args[1]
                         if (name == "android_id") {
-                            val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用Settings.Secure.getString获取了${name}"
+                            val msg = "应用:${appName}调用Settings.Secure.getString获取了${name}"
                             Log.e(TAG, msg)
                             postMsg(msg)
                         }
@@ -170,7 +171,7 @@ class Hook : XposedInit() {
                 String::class.java,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val msg = "应用:${AppHelper.getApplicationNameByPackageName(context, hookPackageName)}调用getLastKnownLocation获取了GPS地址"
+                        val msg = "应用:${appName}调用getLastKnownLocation获取了GPS地址"
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
