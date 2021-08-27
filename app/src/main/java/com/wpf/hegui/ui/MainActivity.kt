@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        var viewMap: List<Map<String, Any?>> = arrayListOf()
+        var viewMap: MutableList<Map<String, Any?>> = arrayListOf()
         launch {
             val appInfoList = AppPackageUtil.getAllPackage(this@MainActivity)
             viewMap = appInfoList.map {
@@ -41,7 +41,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                         Pair("version", it.appVersion),
                         Pair("package", it.appPackageName)
                 )
-            }
+            }.toMutableList()
+            viewMap.add(0, mapOf(
+                    Pair("icon", null),
+                    Pair("name", ""),
+                    Pair("version", ""),
+                    Pair("package", "")
+            ))
             selectPackage.adapter = (AppInfoAdapter(this@MainActivity, viewMap).also {
                 it.viewBinder = SimpleAdapter.ViewBinder { view, data, _ ->
                     if (view is ImageView) {
