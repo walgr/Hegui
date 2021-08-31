@@ -8,6 +8,7 @@ import kotlin.Throws
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.PackageInfo
 import de.robv.android.xposed.XposedBridge
 import dalvik.system.PathClassLoader
@@ -15,6 +16,8 @@ import android.content.pm.PackageManager
 import android.util.Log
 import brut.androlib.res.decoder.AXmlResourceParser
 import com.google.common.collect.Maps
+import de.robv.android.xposed.XposedHelpers.findAndHookMethod
+import de.robv.android.xposed.XposedHelpers.findClass
 import org.apache.commons.io.IOUtils
 import org.apache.commons.lang3.StringUtils
 import org.xmlpull.v1.XmlPullParser
@@ -32,18 +35,54 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
  * @author virjar@virjar.com
  */
 open class XposedInit : IXposedHookLoadPackage {
+
+    var context: Context? = null
+    lateinit var loadPackageParam: LoadPackageParam
+
     override fun handleLoadPackage(lpparam: LoadPackageParam) {
-        XposedHelpers.findAndHookMethod(Application::class.java, "attach", Context::class.java, object : XC_MethodHook(PRIORITY_HIGHEST * 2) {
-            //由于集成了脱壳功能，所以必须选择before了
-            @Throws(Throwable::class)
-            override fun beforeHookedMethod(param: MethodHookParam) {
-                hotLoadPlugin(lpparam.classLoader, param.args[0] as Context, lpparam)
+        loadPackageParam = lpparam
+        //获取本检测AppContext
+        findAndHookMethod(
+            Application::class.java,
+            "attach",
+            Context::class.java,
+            object : XC_MethodHook(PRIORITY_HIGHEST * 2) {
+                //由于集成了脱壳功能，所以必须选择before了
+                @Throws(Throwable::class)
+                override fun beforeHookedMethod(param: MethodHookParam) {
+                    hotLoadPlugin(lpparam.classLoader, param.args[0] as Context, lpparam)
+                }
+            })
+        //获取被检测AppContext
+        if (lpparam.isFirstApplication && context == null) {
+            try {
+                val contextClass: Class<*> =
+                    findClass(ContextWrapper::class.java.name, lpparam.classLoader)
+                findAndHookMethod(contextClass, "getApplicationContext", object : XC_MethodHook() {
+                    @Throws(Throwable::class)
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        super.afterHookedMethod(param)
+                        if (context != null) return
+                        context = param.result as? Context
+                        onHookContext(context!!)
+                    }
+                })
+            } catch (t: Throwable) {
+                XposedBridge.log("获取上下文出错$t")
             }
-        })
+        }
+    }
+
+    open fun onHookContext(context: Context) {
+
     }
 
     @SuppressLint("PrivateApi")
-    private fun hotLoadPlugin(ownerClassLoader: ClassLoader, context: Context, lpparam: LoadPackageParam) {
+    private fun hotLoadPlugin(
+        ownerClassLoader: ClassLoader,
+        context: Context,
+        lpparam: LoadPackageParam
+    ) {
         var hasInstantRun = true
         try {
             XposedInit::class.java.classLoader.loadClass(INSTANT_RUN_CLASS)
@@ -52,7 +91,10 @@ open class XposedInit : IXposedHookLoadPackage {
             hasInstantRun = false
         }
         if (hasInstantRun) {
-            Log.e("weijia", "  Cannot load module, please disable \"Instant Run\" in Android Studio.")
+            Log.e(
+                "weijia",
+                "  Cannot load module, please disable \"Instant Run\" in Android Studio."
+            )
             return
         }
 
@@ -65,7 +107,10 @@ open class XposedInit : IXposedHookLoadPackage {
             hasInstantRun = false
         }
         if (hasInstantRun) {
-            Log.e("weijia", "  Cannot load module, please disable \"Instant Run\" in Android Studio.")
+            Log.e(
+                "weijia",
+                "  Cannot load module, please disable \"Instant Run\" in Android Studio."
+            )
             return
         }
 
@@ -73,8 +118,14 @@ open class XposedInit : IXposedHookLoadPackage {
             val aClass = hotClassLoader!!.loadClass("com.wpf.hegui.hotload.HotLoadPackageEntry")
             Log.i("weijia", "invoke hot load entry")
             aClass
-                    .getMethod("entry", ClassLoader::class.java, ClassLoader::class.java, Context::class.java, LoadPackageParam::class.java)
-                    .invoke(null, ownerClassLoader, hotClassLoader, context, lpparam)
+                .getMethod(
+                    "entry",
+                    ClassLoader::class.java,
+                    ClassLoader::class.java,
+                    Context::class.java,
+                    LoadPackageParam::class.java
+                )
+                .invoke(null, ownerClassLoader, hotClassLoader, context, lpparam)
         } catch (e: Exception) {
             if (e is ClassNotFoundException) {
                 val inputStream = hotClassLoader!!.getResourceAsStream("assets/hotload_entry.txt")
@@ -112,7 +163,8 @@ open class XposedInit : IXposedHookLoadPackage {
             }
             var packageInfo: PackageInfo? = null
             try {
-                packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
+                packageInfo =
+                    packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
             } catch (e: PackageManager.NameNotFoundException) {
                 //ignore
             }
@@ -139,7 +191,10 @@ open class XposedInit : IXposedHookLoadPackage {
          * @param packageInfo 插件自己的包信息
          * @return 根据插件apk创建的classloader
          */
-        private fun createClassLoader(parent: ClassLoader, packageInfo: PackageInfo): PathClassLoader? {
+        private fun createClassLoader(
+            parent: ClassLoader,
+            packageInfo: PackageInfo
+        ): PathClassLoader? {
             if (classLoaderCache.containsKey(packageInfo.applicationInfo.sourceDir)) {
                 return classLoaderCache[packageInfo.applicationInfo.sourceDir]
             }
@@ -189,7 +244,11 @@ open class XposedInit : IXposedHookLoadPackage {
                 while (xpp.next().also { eventType = it } > -1) {
                     if (XmlPullParser.END_DOCUMENT == eventType) {
                         return null
-                    } else if (XmlPullParser.START_TAG == eventType && "manifest".equals(xpp.name, ignoreCase = true)) {
+                    } else if (XmlPullParser.START_TAG == eventType && "manifest".equals(
+                            xpp.name,
+                            ignoreCase = true
+                        )
+                    ) {
                         // read <manifest> for package:
                         for (i in 0 until xpp.attributeCount) {
                             if (StringUtils.equalsIgnoreCase(xpp.getAttributeName(i), "package")) {

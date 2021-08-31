@@ -18,7 +18,7 @@ object ContentProviderHelper {
     private const val CONTENT_URI = CONTENT + AUTHORITY
     private const val NULL_STRING = "null"
 
-    fun getString(context: Context?, name: String, defaultValue: String? = ""): String? {
+    fun getString(context: Context?, name: String, defaultValue: String = ""): String {
         val hookContentProvider = context?.contentResolver
         val uri: Uri = Uri.parse(CONTENT_URI + SEPARATOR + name)
         val rtn: String? = hookContentProvider?.getType(uri)

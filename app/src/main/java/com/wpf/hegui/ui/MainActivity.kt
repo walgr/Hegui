@@ -12,14 +12,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.wpf.hegui.AppApplication
 import com.wpf.hegui.R
+import com.wpf.hegui.data.AppInfo
 import com.wpf.hegui.ui.adapter.AppInfoAdapter
 import com.wpf.hegui.ui.adapter.HookResultAdapter
 import com.wpf.hegui.util.ACache
 import com.wpf.hegui.util.AppPackageUtil
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.async
 import java.util.*
 
 class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         var viewMap: MutableList<Map<String, Any?>> = arrayListOf()
         launch {
-            val appInfoList = AppPackageUtil.getAllPackage(this@MainActivity)
+            val appInfoList = withContext(Dispatchers.IO) { AppPackageUtil.getAllPackage(this@MainActivity) }
             viewMap = appInfoList.map {
                 mapOf(
                         Pair("icon", it.appIcon),
@@ -78,19 +78,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         hookResultAdapter = HookResultAdapter(hookResultAdapterData)
         hookResultList.adapter = hookResultAdapter
 
-        object : CountDownTimer(Long.MAX_VALUE, 1000) {
-
-            override fun onTick(millisUntilFinished: Long) {
-                if (AppApplication.hookResultData?.find { it.contains(AppApplication.hookAppName) } != null) {
-                    state.text = "正在监听"
-                }
-                hookResultAdapter?.setNewData(AppApplication.hookResultData)
+        AppApplication.hookResultData.observeForever {
+            if (AppApplication.hookResultData.value?.find { it.contains(AppApplication.hookAppName) } != null) {
+                state.text = "正在监听"
             }
-
-            override fun onFinish() {
-
-            }
-        }.start()
+            hookResultAdapter?.setNewData(AppApplication.hookResultData.value)
+        }
     }
 
     private fun newSelect(packageName: String, appName: String) {
@@ -99,10 +92,17 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             AppApplication.hookAppName = appName
             state.text = "正在等待应用启动"
             ACache.get(this@MainActivity).put("hookPackageName", AppApplication.hookPackageName)
-            Log.e("Xposed", "hook包名变成${AppApplication.hookPackageName}-应用名:${AppApplication.hookAppName}")
-
-            AppApplication.hookResultData?.clear()
-            hookResultAdapter?.setNewData(AppApplication.hookResultData)
+            if (AppApplication.hookPackageName.isNotEmpty()) {
+                Log.e(
+                    "Xposed",
+                    "hook应用:${AppApplication.hookAppName}-包名${AppApplication.hookPackageName}"
+                )
+            } else {
+                Log.e("Xposed","已关闭hook")
+                state.text = "已关闭hook"
+            }
+            AppApplication.hookResultData.value?.clear()
+            hookResultAdapter?.setNewData(AppApplication.hookResultData.value)
         }
     }
 }

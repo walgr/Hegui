@@ -1,6 +1,7 @@
 package com.wpf.hegui.hook
 
 import com.wpf.hegui.AppApplication
+import kotlinx.coroutines.*
 
 /**
  * Created by 王朋飞 on 2021/6/16.
@@ -9,9 +10,12 @@ import com.wpf.hegui.AppApplication
 object HookResultData {
 
     fun postResult(result: String) {
-//        if (AppApplication.hookResultData?.size?:0 >= 100) {
-//            AppApplication.hookResultData?.removeFirst()
-//        }
-        AppApplication.hookResultData?.add(result)
+        CoroutineScope(Dispatchers.Main).launch {
+            if (AppApplication.hookResultData.value == null) {
+                AppApplication.hookResultData.value = arrayListOf(result)
+            }
+            AppApplication.hookResultData.value?.add(result)
+            AppApplication.hookResultData.postValue(AppApplication.hookResultData.value)
+        }
     }
 }

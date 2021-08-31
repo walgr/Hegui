@@ -1,6 +1,7 @@
 package com.wpf.hegui
 
 import android.app.Application
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.wpf.hegui.util.ACache
 import java.util.*
@@ -16,7 +17,7 @@ class AppApplication : Application() {
         var hookPackageName = ""
         var hookAppName = ""
 
-        var hookResultData: MutableList<String>? = mutableListOf()
+        var hookResultData: MutableLiveData<MutableList<String>> = MutableLiveData()
     }
 
     override fun onCreate() {
