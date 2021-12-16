@@ -21,6 +21,8 @@ class Hook : XposedInit() {
 
     override fun onHookContext(context: Context) {
         super.onHookContext(context)
+        isHook = ContentProviderHelper.getString(context, "postState", "0") == "1"
+        if (isHook) return
         if (hookPackageName.isEmpty()) {
             hookPackageName = ContentProviderHelper.getString(context, "hookPackageName", "")
         }
@@ -35,7 +37,7 @@ class Hook : XposedInit() {
         val appName = AppHelper.getApplicationNameByPackageName(context, hookPackageName)
         postMsg("正在hook应用:${appName}")
         isHook = true
-
+        ContentProviderHelper.postHookState(context, isHook)
         //固定格式
         //8.0以下获取imei
         findAndHookMethod(
@@ -45,6 +47,7 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getDeviceId()获取了imei"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
@@ -58,6 +61,7 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getDeviceId(int)获取了imei"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
@@ -71,6 +75,7 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getImei获取了imei"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
@@ -85,6 +90,7 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getImei(int)获取了imei"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
@@ -99,6 +105,7 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getSubscriberId获取了imsi"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
@@ -111,6 +118,7 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getMacAddress()获取了mac地址"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
@@ -123,6 +131,7 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getHardwareAddress()获取了mac地址"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
@@ -141,6 +150,7 @@ class Hook : XposedInit() {
                     val name = param.args[1]
                     if (name == "android_id") {
                         val msg = "应用:${appName}调用Settings.Secure.getString获取了${name}"
+                        Thread.dumpStack()
                         Log.e(TAG, msg)
                         postMsg(msg)
                     }
@@ -156,11 +166,28 @@ class Hook : XposedInit() {
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     val msg = "应用:${appName}调用getLastKnownLocation获取了GPS地址"
+                    Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
                 }
             }
         )
+
+        findAndHookMethod(
+            "android.app.ApplicationPackageManager",
+            lpparam.classLoader,
+            "queryIntentActivitiesAsUser",
+            String::class.java,
+            object : XC_MethodHook() {
+                override fun beforeHookedMethod(param: MethodHookParam) {
+                    val msg = "应用:${appName}调用${param.method}获取了应用列表"
+                    Thread.dumpStack()
+                    Log.e(TAG, msg)
+                    postMsg(msg)
+                }
+            }
+        )
+
     }
 
     private fun postMsg(msg: String) {

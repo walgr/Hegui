@@ -3,7 +3,6 @@ package com.wpf.hegui.util
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 
 
 /**
@@ -32,6 +31,14 @@ object ContentProviderHelper {
         val uri: Uri = Uri.parse(CONTENT_URI + SEPARATOR + "postHookResult")
         hookContentProvider?.insert(uri, ContentValues().also {
             it.put("hookResult", hookResult)
+        })
+    }
+
+    fun postHookState(context: Context?, hookState: Boolean) {
+        val hookContentProvider = context?.contentResolver
+        val uri: Uri = Uri.parse(CONTENT_URI + SEPARATOR + "postState")
+        hookContentProvider?.insert(uri, ContentValues().also {
+            it.put("postState", hookState)
         })
     }
 }

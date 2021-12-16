@@ -18,4 +18,10 @@ object HookResultData {
             AppApplication.hookResultData.postValue(AppApplication.hookResultData.value)
         }
     }
+
+    fun postState(state: Boolean) {
+        CoroutineScope(Dispatchers.Main).launch {
+            AppApplication.isHook = state
+        }
+    }
 }

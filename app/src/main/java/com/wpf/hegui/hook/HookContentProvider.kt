@@ -4,6 +4,7 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import com.wpf.hegui.AppApplication
 import com.wpf.hegui.util.ACache
 
 /**
@@ -17,6 +18,9 @@ class HookContentProvider : ContentProvider() {
     override fun getType(uri: Uri): String {
         val path: List<String> = uri.path!!.split(SEPARATOR)
         val key = path[1]
+        if (key == "postState") {
+            return if (AppApplication.isHook)  "1" else "0"
+        }
         return "" + ACache.get(context).getAsString(key)
     }
 
@@ -40,6 +44,10 @@ class HookContentProvider : ContentProvider() {
         if (key == "postHookResult") {
             values?.getAsString("hookResult")?.let {
                 HookResultData.postResult(it)
+            }
+        } else if (key == "postState") {
+            values?.getAsBoolean("postState")?.let {
+                HookResultData.postState(it)
             }
         }
         return null

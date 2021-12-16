@@ -1,5 +1,6 @@
 package com.wpf.hegui.ui
 
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.*
 import android.util.Log
@@ -21,6 +22,12 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.async
 import java.util.*
+import android.graphics.Bitmap
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+
 
 class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -90,7 +97,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         if (packageName != AppApplication.hookPackageName) {
             AppApplication.hookPackageName = packageName
             AppApplication.hookAppName = appName
-            state.text = "正在等待应用启动"
+            state.text = "正在等待"
             ACache.get(this@MainActivity).put("hookPackageName", AppApplication.hookPackageName)
             if (AppApplication.hookPackageName.isNotEmpty()) {
                 Log.e(
