@@ -174,13 +174,12 @@ class Hook : XposedInit() {
         )
 
         findAndHookMethod(
-            "android.app.ApplicationPackageManager",
+            "android.net.wifi.WifiManager",
             lpparam.classLoader,
-            "queryIntentActivitiesAsUser",
-            String::class.java,
+            "getConnectionInfo",
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
-                    val msg = "应用:${appName}调用${param.method}获取了应用列表"
+                    val msg = "应用:${appName}调用${param.method}获取了wifi信息"
                     Thread.dumpStack()
                     Log.e(TAG, msg)
                     postMsg(msg)
@@ -188,6 +187,52 @@ class Hook : XposedInit() {
             }
         )
 
+        findAndHookMethod(
+            "android.net.wifi.WifiManager",
+            lpparam.classLoader,
+            "getConnectionInfo",
+            object : XC_MethodHook() {
+                override fun beforeHookedMethod(param: MethodHookParam) {
+                    val msg = "应用:${appName}调用${param.method}获取了wifi信息"
+                    Thread.dumpStack()
+                    Log.e(TAG, msg)
+                    postMsg(msg)
+                }
+            }
+        )
+
+        findAndHookMethod(
+            "android.app.ApplicationPackageManager",
+            lpparam.classLoader,
+            "queryIntentActivitiesAsUser",
+            Intent::class.java,
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+            object : XC_MethodHook() {
+                override fun beforeHookedMethod(param: MethodHookParam) {
+                    val msg = "应用:${appName}调用${param.method}获取了应用列表信息"
+                    Thread.dumpStack()
+                    Log.e(TAG, msg)
+                    postMsg(msg)
+                }
+            }
+        )
+
+        findAndHookMethod(
+            "android.app.ApplicationPackageManager",
+            lpparam.classLoader,
+            "getPackageInfo",
+            String::class.java,
+            Int::class.javaPrimitiveType,
+            object : XC_MethodHook() {
+                override fun beforeHookedMethod(param: MethodHookParam) {
+                    val msg = "应用:${appName}调用${param.method}获取了应用列表信息"
+                    Thread.dumpStack()
+                    Log.e(TAG, msg)
+                    postMsg(msg)
+                }
+            }
+        )
     }
 
     private fun postMsg(msg: String) {
